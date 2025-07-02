@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,39 @@ app.Use(async (context, next) =>
         var result = System.Text.Json.JsonSerializer.Serialize(new { error = ex.Message });
         await context.Response.WriteAsync(result);
     }
+});
+
+// Logging middleware
+app.Use(async (context, next) =>
+{
+    // Log request
+    context.Request.EnableBuffering();
+    var requestBody = "";
+    if (context.Request.ContentLength > 0)
+    {
+        using (var reader = new StreamReader(
+            context.Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true))
+        {
+            requestBody = await reader.ReadToEndAsync();
+            context.Request.Body.Position = 0;
+        }
+    }
+    Console.WriteLine($"HTTP {context.Request.Method} {context.Request.Path} Request Body: {requestBody}");
+
+    // Capture response
+    var originalBodyStream = context.Response.Body;
+    using var responseBody = new MemoryStream();
+    context.Response.Body = responseBody;
+
+    await next();
+
+    context.Response.Body.Seek(0, SeekOrigin.Begin);
+    var responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
+    context.Response.Body.Seek(0, SeekOrigin.Begin);
+
+    Console.WriteLine($"HTTP {context.Request.Method} {context.Request.Path} Response Status: {context.Response.StatusCode} Body: {responseText}");
+
+    await responseBody.CopyToAsync(originalBodyStream);
 });
 
 if (app.Environment.IsDevelopment())
