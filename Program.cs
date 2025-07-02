@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -37,6 +39,14 @@ var nextId = 1;
 // CREATE
 app.MapPost("/users", (User user) =>
 {
+    var validationResults = new List<ValidationResult>();
+    var context = new ValidationContext(user, null, null);
+    if (!Validator.TryValidateObject(user, context, validationResults, true))
+    {
+        var errors = validationResults.Select(vr => vr.ErrorMessage).ToArray();
+        return Results.BadRequest(new { errors });
+    }
+
     user.Id = nextId++;
     users.Add(user);
     return Results.Created($"/users/{user.Id}", user);
@@ -57,7 +67,17 @@ app.MapPut("/users/{id:int}", (int id, User updatedUser) =>
 {
     var user = users.FirstOrDefault(u => u.Id == id);
     if (user is null) return Results.NotFound();
+
+    var validationResults = new List<ValidationResult>();
+    var context = new ValidationContext(updatedUser, null, null);
+    if (!Validator.TryValidateObject(updatedUser, context, validationResults, true))
+    {
+        var errors = validationResults.Select(vr => vr.ErrorMessage).ToArray();
+        return Results.BadRequest(new { errors });
+    }
+
     user.Name = updatedUser.Name;
+    user.Email = updatedUser.Email;
     return Results.Ok(user);
 });
 
@@ -75,5 +95,11 @@ app.Run();
 record User
 {
     public int Id { get; set; }
+
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Email is not valid.")]
+    public string Email { get; set; }
+
+    [Required(ErrorMessage = "Name is required.")]
     public string Name { get; set; }
 }
