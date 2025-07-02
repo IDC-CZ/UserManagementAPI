@@ -59,6 +59,18 @@ app.Use(async (context, next) =>
     await responseBody.CopyToAsync(originalBodyStream);
 });
 
+// Authentication middleware (simulate: require non-empty "Authorization" header)
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Headers.TryGetValue("Authorization", out var token) || string.IsNullOrWhiteSpace(token))
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("{\"error\": \"Unauthorized: Missing or empty Authorization header.\"}");
+        return;
+    }
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
