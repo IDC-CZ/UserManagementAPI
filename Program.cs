@@ -34,8 +34,8 @@ else
     app.UseHttpsRedirection();
 }
 
-// In-memory user list
-var users = new List<User>();
+// In-memory user dictionary for O(1) lookups
+var users = new Dictionary<int, User>();
 var nextId = 1;
 
 // CREATE
@@ -50,25 +50,26 @@ app.MapPost("/users", (User user) =>
     }
 
     user.Id = nextId++;
-    users.Add(user);
+    users[user.Id] = user;
     return Results.Created($"/users/{user.Id}", user);
 });
 
 // READ ALL
-app.MapGet("/users", () => users);
+app.MapGet("/users", () => users.Values);
 
 // READ BY ID
 app.MapGet("/users/{id:int}", (int id) =>
 {
-    var user = users.FirstOrDefault(u => u.Id == id);
-    return user is not null ? Results.Ok(user) : Results.NotFound();
+    return users.TryGetValue(id, out var user)
+        ? Results.Ok(user)
+        : Results.NotFound();
 });
 
 // UPDATE
 app.MapPut("/users/{id:int}", (int id, User updatedUser) =>
 {
-    var user = users.FirstOrDefault(u => u.Id == id);
-    if (user is null) return Results.NotFound();
+    if (!users.TryGetValue(id, out var user))
+        return Results.NotFound();
 
     var validationResults = new List<ValidationResult>();
     var context = new ValidationContext(updatedUser, null, null);
@@ -80,15 +81,15 @@ app.MapPut("/users/{id:int}", (int id, User updatedUser) =>
 
     user.Name = updatedUser.Name;
     user.Email = updatedUser.Email;
+    users[id] = user;
     return Results.Ok(user);
 });
 
 // DELETE
 app.MapDelete("/users/{id:int}", (int id) =>
 {
-    var user = users.FirstOrDefault(u => u.Id == id);
-    if (user is null) return Results.NotFound();
-    users.Remove(user);
+    if (!users.Remove(id))
+        return Results.NotFound();
     return Results.NoContent();
 });
 
