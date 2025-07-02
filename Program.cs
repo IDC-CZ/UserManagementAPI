@@ -148,8 +148,8 @@ record User
 
     [Required(ErrorMessage = "Email is required.")]
     [EmailAddress(ErrorMessage = "Email is not valid.")]
-    public string Email { get; set; }
+    public required string Email { get; set; }
 
     [Required(ErrorMessage = "Name is required.")]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 }
