@@ -6,20 +6,20 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Add exception handling middleware
-app.UseExceptionHandler(errorApp =>
+// Custom exception handling middleware
+app.Use(async (context, next) =>
 {
-    errorApp.Run(async context =>
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
     {
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        if (error != null)
-        {
-            var result = System.Text.Json.JsonSerializer.Serialize(new { error = error.Error.Message });
-            await context.Response.WriteAsync(result);
-        }
-    });
+        var result = System.Text.Json.JsonSerializer.Serialize(new { error = ex.Message });
+        await context.Response.WriteAsync(result);
+    }
 });
 
 if (app.Environment.IsDevelopment())
