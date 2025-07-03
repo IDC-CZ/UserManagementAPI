@@ -142,7 +142,7 @@ app.MapDelete("/users/{id:int}", (int id) =>
 
 app.Run();
 
-record User
+public class User
 {
     public int Id { get; set; }
 
