@@ -1,36 +1,44 @@
 @UserManagementAPI_HostAddress = http://localhost:5040
+@authToken = mysecrettoken
 
 ### Create a new user
 POST {{UserManagementAPI_HostAddress}}/users
 Content-Type: application/json
+Authorization: {{authToken}}
 
 {
-  "name": "Alice"
+  "name": "Alice",
+  "email": "alice@example.com"
 }
 
 ###
 
 ### Get all users
 GET {{UserManagementAPI_HostAddress}}/users
+Authorization: {{authToken}}
 
 ###
 
 ### Get user by ID
 GET {{UserManagementAPI_HostAddress}}/users/1
+Authorization: {{authToken}}
 
 ###
 
 ### Update user by ID
 PUT {{UserManagementAPI_HostAddress}}/users/1
 Content-Type: application/json
+Authorization: {{authToken}}
 
 {
-  "name": "Alice Updated"
+  "name": "Alice Updated",
+  "email": "alice.updated@example.com"
 }
 
 ###
 
 ### Delete user by ID
 DELETE {{UserManagementAPI_HostAddress}}/users/1
+Authorization: {{authToken}}
 
 ###
